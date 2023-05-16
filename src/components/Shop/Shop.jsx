@@ -13,40 +13,71 @@ const Shop = () => {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const { totalProducts } = useLoaderData();
 
-    // const itemsPerPages = 10;
     const totalPages = Math.ceil(totalProducts / itemsPerPage);
 
     const pagesNumbers = [...Array(totalPages).keys()]
 
-    // useEffect(() => {
-    //     fetch('http://localhost:5000/products')
-    //         .then(res => res.json())
-    //         .then(data => setProducts(data))
-    // }, []);
-
     useEffect(() => {
         async function fetchData() {
             const response = await fetch(`http://localhost:5000/products?page=${currentPage}&limit=${itemsPerPage}`);
-            
+
             const data = await response.json();
             setProducts(data);
         }
         fetchData();
     }, [currentPage, itemsPerPage]);
 
+    // useEffect(() => {
+    //     const storedCart = getShoppingCart();
+    //     const ids = Object.keys(storedCart);
+
+    //     const cartProductsLoader = async () => {
+    //         const loadedProducts = await fetch(`http://localhost:5000/productsByIds`, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'content-type': 'application/json'
+    //             },
+    //             body: JSON.stringify(ids)
+    //         });
+
+    //         const savedCart = [];
+    //         for (const id in storedCart) {
+    //             const addedProduct = products.find(product => product._id === id)
+    //             if (addedProduct) {
+    //                 const quantity = storedCart[id];
+    //                 addedProduct.quantity = quantity;
+    //                 savedCart.push(addedProduct);
+    //             }
+    //         }
+    //         setCart(savedCart);
+    //     }, [products])
     useEffect(() => {
         const storedCart = getShoppingCart();
-        const savedCart = [];
-        for (const id in storedCart) {
-            const addedProduct = products.find(product => product._id === id)
-            if (addedProduct) {
-                const quantity = storedCart[id];
-                addedProduct.quantity = quantity;
-                savedCart.push(addedProduct);
-            }
-        }
-        setCart(savedCart);
-    }, [products])
+        const ids = Object.keys(storedCart);
+
+        fetch(`http://localhost:5000/productsByIds`, {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify(ids)
+        })
+            .then(res => res.json())
+            .then(cartProducts => {
+                const savedCart = [];
+                for (const id in storedCart) {
+                    const addedProduct = cartProducts.find(product => product._id === id)
+                    if (addedProduct) {
+                        const quantity = storedCart[id];
+                        addedProduct.quantity = quantity;
+                        savedCart.push(addedProduct);
+                    }
+                }
+                setCart(savedCart);
+            })
+
+
+    }, [])
 
     const handleAddToCart = (product) => {
         let newCart = [];
@@ -107,7 +138,7 @@ const Shop = () => {
                         key={number}
                         className={currentPage === number ? 'selected' : ''}
                         onClick={() => setCurrentPage(number)}
-                    >{number}</button>)
+                    >{number + 1}</button>)
                 }
                 <select value={itemsPerPage} onChange={handleSelectChange}>
                     {options.map(option => (
@@ -115,7 +146,7 @@ const Shop = () => {
                             {option}
                         </option>
                     ))}
-                    </select>
+                </select>
             </div>
         </>
     );
